@@ -38,7 +38,7 @@
 
 meta:
   name: comprehensive-spyware-iocs
-  version: 3.0.0
+  version: 2026.10.25
   updated: 2026-10-25
   provenance: "Seed set compiled from public sources. Requires refresh before production use."
   sources:

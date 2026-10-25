@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Pegasus-Sweep — Dashboard{% endblock %}
+{% block content %}
+<h1>Multi-target Pegasus triage dashboard</h1>
+<p class="mut">Check desktops, Android, and iOS devices against the indicator
+oracle. Not a verdict tool — see <a href="/#method">method notes</a>.</p>
+
+<div class="tabs">
+  <div class="tab active" data-tab="desktop">🖥 Desktop</div>
+  <div class="tab" data-tab="android">📱 Android</div>
+  <div class="tab" data-tab="ios">🍎 iOS</div>
+  <div class="tab" data-tab="agents">📡 Agents</div>
+  <div class="tab" data-tab="method">📖 Method</div>
+</div>
+
+<!-- DESKTOP -->
+<div class="card pane active" id="pane-desktop">
+  <h3>Desktop (this host)</h3>
+  <p class="mut">Scans processes, outbound connections, autostart/persistence.
+  Runs on the machine hosting the dashboard — takes ~30–60&nbsp;s.</p>
+  <button id="runDesktop">&#9654; Run desktop scan</button>
+  <span class="msgline" id="desktopMsg">idle</span>
+</div>
+
+<!-- ANDROID -->
+<div class="card pane" id="pane-android">
+  <h3>Android</h3>
+  <p><b>Option A — on-device agent.</b> Build &amp; install the agent app
+  (<code>android_agent/</code>); it posts package/process/accessibility data to
+  <code>/api/ingest</code> with the API key. See Agent tab.</p>
+  <p><b>Option B — upload an acquisition.</b> Zip of extracted DBs/logs
+  (or an MVT extraction) and the server runs artifact + anomaly scanning.</p>
+  <form method="post" action="/scan/android" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".zip,.db,.tgz,.tar">
+    <button class="btn" type="submit">Upload &amp; scan</button>
+  </form>
+</div>
+
+<!-- iOS -->
+<div class="card pane" id="pane-ios">
+  <h3>iOS</h3>
+  <p class="mut">iOS exposes no web API for on-device inspection, so the flow is
+  <b>backup upload</b>: the server runs Amnesty MVT
+  (<code>mvt ios decrypt-backup</code>) if installed, then artifact/anomaly
+  scanning on the extracted data. Upload the decrypted/extracted DB set as a zip.</p>
+  <form method="post" action="/scan/ios" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".zip,.db,.tar,.tgz">
+    <button class="btn" type="submit">Upload &amp; scan</button>
+  </form>
+  <p class="mut">For an unmodified encrypted backup, run <code>mvt</code> locally
+  first (see CLI) — an encrypted iTunes backup requires the device passcode.</p>
+</div>
+
+<!-- AGENTS -->
+<div class="card pane" id="pane-agents">
+  <a name="agents"></a><h3>Scheduled / remote agents</h3>
+  <p class="mut">A <b>desktop agent</b> (<code>agent/agent_desktop.py</code>) you
+  install on machines you own collects a snapshot and POSTs it to
+  <code>/api/ingest</code> with a per-target label. An <b>Android agent</b>
+  (<code>android_agent/</code>) does the same on a phone. Both are opt-in,
+  run locally, and only send the snapshot they gather to <i>your</i> dashboard.</p>
+  <p class="mut">Set <code>PSM_SWEEP_TOKEN</code> on the server and pass the same
+  value to agents. Endpoint: <code>POST /api/ingest</code> with header
+  <code>X-Api-Key</code> and JSON body <code>{"target":"desktop|android","snapshot":{…}}</code>.</p>
+</div>
+
+<!-- METHOD -->
+<div class="card pane" id="pane-method">
+  <a name="method"></a><h3>Method &amp; honest limits</h3>
+  <ul class="mut">
+    <li><b>Absence of a match does NOT clear a device.</b> Pegasus rotates C2
+    infrastructure and implants continuously.</li>
+    <li>The seed IOC set (<code>indicators/pegasus_iocs.yaml</code>) is examples
+    only — refresh from <a href="https://github.com/mvt-project/mvt" target="_blank" rel="noopener">Amnesty MVT</a>
+    / <a href="https://citizenlab.ca" target="_blank" rel="noopener">Citizen Lab</a>
+    before trusting a result.</li>
+    <li>Live telemetry is transient — repeat scans across sessions.</li>
+    <li>Process-name matches are the weakest signal (treat alone as <i>low</i>).</li>
+    <li>Full methodology: <code>docs/methodology.md</code>.</li>
+  </ul>
+</div>
+
+<!-- RECENT SCANS -->
+<h3>Recent scans</h3>
+<div class="card" id="recentBox">
+  <table><thead><tr><th>ID</th><th>Target</th><th>Mode</th><th>Source</th>
+  <th>When</th><th>Status</th><th>Findings</th></tr></thead><tbody>
+  {% for r in recent %}
+  {% set s = r['summary'] or {} %}
+  <tr>
+    <td><a href="/scan/{{ r['id'] }}">#{{ r['id'] }}</a></td>
+    <td>{{ r['target'] }}</td><td class="mut">{{ r['mode'] }}</td>
+    <td class="mut">{{ r['source_label'] }}</td>
+    <td class="mut">{{ r['created_at'][:19].replace('T',' ') }}Z</td>
+    <td>{{ '✓ done' if r['status']=='done' else r['status'] }}</td>
+    <td>
+      {% for sev in severities %}{% set n = s['by_severity'].get(sev,0) if s and 'by_severity' in s else 0 %}
+      {% if n %}<span class="pill {{ sev }}">{{ sev }} {{ n }}</span> {% endif %}{% endfor %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7" class="mut">No scans yet.</td></tr>
+  {% endfor %}
+  </tbody></table>
+  <p class="mut">Total by target:
+  {% for t,c in counts.items() %}{{ t }}={{ c }}&nbsp;&nbsp;{% endfor %}</p>
+</div>
+
+<script>
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('pane-'+tab.dataset.tab).classList.add('active');
+  });
+});
+const runDesktop=document.getElementById('runDesktop'), dMsg=document.getElementById('desktopMsg');
+runDesktop.addEventListener('click', async ()=>{
+  runDesktop.disabled=true; dMsg.textContent='queued — collecting…';
+  await fetch('/scan/desktop',{method:'POST'});
+  poll();
+});
+async function poll(){
+  const r=await fetch('/scans'); const data=await r.json();
+  const scans=(data.scans||[]);
+  dMsg.textContent='scanning… (refresh history when done)';
+  if(scans.length && scans[0].target==='desktop' && scans[0].status===('done'||'error')){
+     // only stop spinner if the most recent desktop scan is finished
+  }
+  // keep lightweight: refresh 'Recent scans' after 12s
+  setTimeout(()=>location.reload(), 12000);
+}
+</script>
+{% endblock %}

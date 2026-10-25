@@ -1,0 +1,83 @@
+# Security & detection methodology for Pegasus-Sweep
+
+This document is the honest account of what this tool can and cannot establish,
+and how the signals should be interpreted. **Read it before trusting a result.**
+
+## 1. Why indicator matching is the wrong tool for a *decision*
+
+Pegasus is an offensive, actively-maintained implant built by a commercial
+attacker with a large budget. Its core design goal is to avoid the exact
+signals this toolkit scans for. Consequences:
+
+- **Constant rotation.** C2 domains, IPs, file paths, and process naming
+  change over time. Any static indicator set (ours included) drifts stale.
+- **Stealth by design.** A fully-armored Pegasus install may expose almost no
+  file-system or naming artifacts detectable pre-compromise.
+- **The platform asymmetry.** Pegasus primarily targets *phones* (iOS/Android).
+  A Windows host scan — however thorough — says essentially nothing about a
+  phone sitting next to it. Mobile coverage requires MVT-style forensic
+  extraction.
+
+Therefore every output here is a **candidate signal for human triage**, graded
+by severity, never a machine verdict of "infected" / "clean."
+
+## 2. The detection pipeline
+
+```
+live telemetry  ──►  collect   ──►  match vs oracle  ──►  grade   ──►  report
+(host)                (snapshot)       (IOCEngine)      (severity)
+phone artifacts ──►  mvt extract ──►  sqlite/regex scan
+```
+
+Each step is deliberately separable so an analyst can inspect any stage.
+
+## 3. Signal strength ordering (weak → strong)
+
+1. **Process name only (weakest).** Names like "scout" / "tangerine monitor"
+   are common words; a benign process can share a name. Never accept alone.
+2. **File path substring.** Slightly stronger, still spoofable; medium.
+3. **Autostart / persistence.** Medium — implants want persistence, so an
+   unexpected autorun entry is notable regardless of the indicator list.
+4. **Network C2 (strongest).** A live outbound connection to a documented C2
+   IP/domain is the most corroborating single signal, and here it is matched
+   conservatively (private IPs are excluded to reduce noise).
+
+## 4. Known failure modes (be explicit about these)
+
+- **False negative from rotation:** indicator list is old → real C2 missed.
+- **False negative from timing:** beacon sleeps / was not connected during the
+  scan window. Mitigation: run repeatedly across hours/days.
+- **False positive from substring matching:** "scout" can match benign names.
+- **Reverse-DNS truncation:** `_reverse_lookup` is bounded (timeout + a cap of
+  60 lookups) so a slow resolver can't stall a scan — but later connections get
+  no hostname. IP-only matches still run against C2 CIDRs.
+
+## 5. What a defensible workflow looks like
+
+1. Refresh the oracle from Amnesty MVT / Citizen Lab on the scan day.
+2. Run multiple host scans spaced out (different network states).
+3. For any phone: MVT full extraction, feed artifacts through the scan, and
+   have a forensic examiner review the MVT findings log directly.
+4. Never destroy evidence (no wipe/restart) before preservation.
+5. Treat every positive as "requires investigation," every negative as "no
+   signal observed within these windows," not "clean."
+
+## 6. Agents & the web dashboard (trust & deployment)
+
+The dashboard's value is consolidating scans from several machines/phones. That
+means you are entrusting it with sensitive telemetry:
+
+- **Run on loopback by default**; if bridged to a LAN or VPN, put it behind a
+  reverse proxy with TLS and set a strong `PSM_SWEEP_TOKEN`.
+- **Agents are push, not pull.** A desktop agent only sends a snapshot to *your*
+  dashboard; it does not accept commands. Android agent likewise only posts.
+- **An uploaded acquisition is evidence-grade.** Decrypt/preserve a copy before
+  upload; the extraction directory under `uploads/` is the working copy.
+- **Every finding has provenance** (oracle profile + matched feed) specifically
+  so a reviewer can disagree with a verdict instead of trusting it blindly.
+
+## 7. Ethics / authorization
+
+Run this only on devices you own or are explicitly authorized to assess.
+Spyware detection is defensive; misuse (e.g. examining someone's device
+without consent) is unlawful and outside this tool's purpose.

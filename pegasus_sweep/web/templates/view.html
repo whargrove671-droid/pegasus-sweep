@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Scan #{{ record.id if record else '?' }} — Pegasus-Sweep{% endblock %}
+{% block content %}
+{% if not_found %}
+<h1>Scan not found</h1><p class="mut"><a href="/">Back to dashboard</a></p>
+{% else %}
+{% set s = record['summary'] or {} %}
+<h1>Scan #{{ record.id }} &mdash; {{ record['target'] }} / {{ record['mode'] }}</h1>
+<div class="card">
+  <p class="mut">Source: {{ record['source_label'] or '-' }} &middot;
+  Run: {{ record['created_at'][:19].replace('T',' ') }}Z &middot;
+  Status: <b>{{ record['status'] }}</b> &middot; {{ record['message'] or '' }}</p>
+  <p>
+    {% for sev in severities %}{% set n = s.get('by_severity',{}).get(sev,0) %}
+    {% if n %}<span class="pill {{ sev }}">{{ sev }} {{ n }}</span> {% endif %}{% else %}
+    {{ s.get('total_findings',0) }} finding(s){% endfor %}
+  </p>
+</div>
+
+<h3>Findings</h3>
+<div class="card">{{ findings_html|safe }}</div>
+
+{% if record['snapshot'] %}
+{% set snap = record['snapshot'] %}
+<h3>Snapshot</h3>
+<div class="card">
+  {% if snap.get('processes') is not none %}
+  <details><summary>Processes ({{ snap.get('processes',[])|length }})</summary>
+  <table><thead><tr><th>name</th><th>exe</th></tr></thead><tbody>
+  {% for p in snap.get('processes',[])[:500] %}<tr><td>{{ p.get('name','') }}</td>
+  <td class="mut">{{ p.get('exe','') }}</td></tr>{% endfor %}</tbody></table></details>
+  {% endif %}
+  {% if snap.get('connections') is not none %}
+  <details><summary>Connections ({{ snap.get('connections',[])|length }})</summary>
+  <table><thead><tr><th>remote</th><th>host</th><th>pid</th></tr></thead><tbody>
+  {% for c in snap.get('connections',[])[:500] %}<tr>
+  <td>{{ c.get('remote_ip','') }}:{{ c.get('remote','') }}</td>
+  <td class="mut">{{ c.get('remote_host','') }}</td><td class="mut">{{ c.get('pid','') }}</td>
+  </tr>{% endfor %}</tbody></table></details>
+  {% endif %}
+  {% if snap.get('registry_keys') %}
+  <details><summary>Autostart keys ({{ snap.get('registry_keys',[])|length }})</summary>
+  <table>{% for k in snap['registry_keys'] %}<tr><td class="mut">{{ k }}</td></tr>{% endfor %}</table></details>
+  {% endif %}
+  {% if snap.get('scanned_dbs') %}
+  <details><summary>Scanned artifacts ({{ snap.get('scanned_dbs',[])|length }})</summary>
+  <table>{% for d in snap['scanned_dbs'] %}<tr><td class="mut">{{ d }}</td></tr>{% endfor %}</table></details>
+  {% endif %}
+  {% if snap.get('packages') %}
+  <details><summary>Android packages ({{ snap.get('packages',[])|length }})</summary>
+  <table><thead><tr><th>pkg</th><th>grants</th></tr></thead><tbody>
+  {% for p in snap.get('packages',[])[:500] %}<tr><td>{{ p.get('name','') }}</td>
+  <td class="mut">{% for g in ['is_device_owner','device_admin','has_accessibility'] %}{% if p.get(g) %}{{ g }} {% endif %}{% endfor %}</td></tr>{% endfor %}
+  </tbody></table></details>
+  {% endif %}
+</div>
+{% endif %}
+<p><a class="btn" href="/">Back to dashboard</a></p>
+{% endif %}
+{% endblock %}

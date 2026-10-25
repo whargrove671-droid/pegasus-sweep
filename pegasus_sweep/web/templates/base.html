@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Pegasus-Sweep{% endblock %}</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--txt:#e6edf3;--mut:#8b949e;--accent:#58a6ff;
+--crit:#ff7b72;--high:#f0883e;--med:#d29922;--low:#c9d1d9;--line:#30363d;}
+*{box-sizing:border-box}body{background:var(--bg);color:var(--txt);
+font:15px/1.6 -apple-system,Segoe UI,Roboto,sans-serif;margin:0;padding:0 28px 60px;max-width:1000px;margin:0 auto}
+nav{display:flex;gap:22px;align-items:center;border-bottom:1px solid var(--line);padding:14px 0;margin-bottom:18px}
+nav a{color:var(--accent);text-decoration:none;font-weight:600}
+nav a:hover{text-decoration:underline}.brand{font-size:19px;font-weight:700;color:var(--txt)}
+.mut{color:var(--mut)}code{background:#21262d;padding:1px 5px;border-radius:4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin:14px 0}
+h1{font-size:23px}h3{color:var(--accent);margin-top:6px}
+button, .btn{background:#238636;border:0;color:#fff;padding:9px 16px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+button:hover,.btn:hover{background:#2ea043}button:disabled{opacity:.55;cursor:wait}
+input[type=file]{color:var(--mut);font-size:14px}
+table{border-collapse:collapse;width:100%;font-size:13px;margin-top:6px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--mut)}.pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;font-weight:600}
+.pill.critical{background:#ff7b7222;color:var(--crit)}.pill.high{background:#f0883e22;color:var(--high)}
+.pill.medium{background:#d2992222;color:var(--med)}.pill.low{background:#c9d1d922;color:var(--low)}
+.pill.info{background:#58a6ff22;color:var(--accent)}
+.ok{color:#3fb950;font-weight:700}.bad{color:var(--crit);font-weight:700}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.tab{padding:8px 14px;border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--mut)}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#0d1117;font-weight:700}
+.pane{display:none}.pane.active{display:block}
+details{margin:8px 0}summary{cursor:pointer;color:var(--accent);font-weight:600}
+.msgline{color:var(--mut);margin:10px 0}
+</style></head><body>
+<nav><span class="brand">&#128269; Pegasus-Sweep</span>
+<a href="/">Dashboard</a><a href="/#agents">Agents</a>
+</nav>
+{% block content %}{% endblock %}
+</body></html>

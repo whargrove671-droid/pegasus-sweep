@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Compile-check all Python
+        run: python -m compileall pegasus_sweep agent/agent_desktop.py
+
+      - name: Run self-test
+        run: python -m pegasus_sweep.tests.test_detection
+
+      - name: Verify oracle YAML parses
+        run: python -c "from pegasus_sweep.core.iocs import load_oracle; from pegasus_sweep.core import settings; o=load_oracle(settings.DEFAULT_IOC_PATH); assert o.proc_names_low and o.persistence_registry; print('oracle OK')"

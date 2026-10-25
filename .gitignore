@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+reports/
+web.log
+/data/
+/uploads/
+.venv/
+venv/
+android_agent/.gradle/
+android_agent/build/
+android_agent/app/build/
+android_agent/local.properties
+*.apk
+android_ingest.out

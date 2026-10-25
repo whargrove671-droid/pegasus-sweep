@@ -10,6 +10,20 @@ for phone data, and exposes everything through a **multi-target web dashboard**.
 > *triage* tool, not an oracle. A clean result does **not** prove a device is
 > free of spyware. Vendors rotate C2 infrastructure and implants constantly.
 
+## Credits & Attributions
+
+This project builds upon the work of many security researchers and organizations.
+**See [CREDITS.md](CREDITS.md) for complete attributions.**
+
+Key sources:
+- **Amnesty International Security Lab** — Pegasus IOCs, forensic methodology, STIX2 data
+- **Citizen Lab** — Candiru/Paragon research, long-term surveillance tracking
+- **The-NSO-Blacklist** — 6,643 NSO C2 domains/IPs, architecture docs
+- **The-Candiru-Blocklist** — 57+ Candiru domains
+- **The-Intellexa-Blocklist** — 516+ Predator domains
+- **The-Paragon-Blacklist** — Graphite infrastructure
+- **MVT Project** — Mobile Verification Toolkit (MIT license)
+
 ## Spyware Vendors Covered
 
 | Vendor | Products | IOCs | Status |
@@ -50,6 +64,7 @@ backup upload + MVT is the only sound route. This is honest coverage, not magic.
 - [docs/api.md](docs/api.md) — web endpoints, the agent ingest contract, and CLI reference
 - [CONTRIBUTING.md](CONTRIBUTING.md) — development setup and contribution guide
 - [SECURITY.md](SECURITY.md) — vulnerability reporting policy
+- [CREDITS.md](CREDITS.md) — complete source attributions
 
 ## Quick start (web dashboard)
 
@@ -87,6 +102,21 @@ python -m pegasus_sweep.cli --mobile android --mobile-source /path/to/image --ou
 python -m pegasus_sweep.tests.test_detection
 ```
 
+## Unified Daily Report (Windows)
+
+For Windows hosts, run the unified daily report that combines all scans:
+
+```bash
+python scripts/unified_daily_report.py
+```
+
+This generates:
+- HTML report: `unified_report_YYYYMMDD.html`
+- JSON report: `unified_report_YYYYMMDD.json`
+- Console summary with critical findings highlighted
+
+Scheduled via cron (11:00 PM daily): `Daily Unified Spyware Report`
+
 ## Agents
 
 - **Desktop agent** — `agent/agent_desktop.py`. Self-contained (psutil + stdlib);
@@ -117,7 +147,17 @@ pegasus_sweep/
   tests/test_detection.py# self-test
 agent/agent_desktop.py   # standalone desktop agent
 android_agent/           # Android agent app source (Kotlin/Gradle)
-indicators/pegasus_iocs.yaml  # seed IOC oracle (see below!)
+indicators/
+  pegasus_iocs.yaml      # seed IOC oracle (see below!)
+  pegasus_processes.yar  # YARA rules for 81 Pegasus processes
+scripts/
+  pegasus_scan.ps1       # PowerShell spyware detection
+  pegasus_scan_wrapper.py # Python cron wrapper
+  browser_history_scanner.py # Browser history scanner
+  yara_scan_wrapper.py   # YARA process scanner
+  unified_daily_report.py # Unified daily report
+  refresh_iocs.py        # Daily IOC refresh
+  block_c2_ips.ps1       # Windows Firewall C2 block rules
 uploads/                 # (runtime) received acquisitions — gitignored
 data/scans.db            # (runtime) scan history — gitignored
 ```
@@ -175,3 +215,5 @@ This license applies to the original code and orchestration in this repository.
   original public sources noted in the file.
 - **Amnesty International MVT** is separately [MIT-licensed](https://github.com/mvt-project/mvt)
   and is invoked as an external tool, not vendored or redistributed here.
+- **Third-party IOCs** remain the property of their original researchers;
+  see [CREDITS.md](CREDITS.md) for complete attributions.

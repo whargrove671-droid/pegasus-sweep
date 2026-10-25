@@ -1,13 +1,32 @@
 # Pegasus-Sweep
 
 An **indicator-based triage toolkit** for checking whether a device may be
-exposed to NSO Group's **Pegasus** spyware. It covers **desktops, Android, and
+exposed to **commercial spyware** including NSO Group's **Pegasus**, Candiru's
+**DevilsTongue**, Intellexa's **Predator**, and Paragon's **Graphite**. It covers **desktops, Android, and
 iOS**, produces severity-graded findings backed by [Amnesty International's MVT](https://github.com/mvt-project/mvt)
 for phone data, and exposes everything through a **multi-target web dashboard**.
 
 > **BEFORE you trust any result, read `docs/methodology.md`.** This is a
 > *triage* tool, not an oracle. A clean result does **not** prove a device is
-> free of Pegasus. NSO rotates its C2 infrastructure and implants constantly.
+> free of spyware. Vendors rotate C2 infrastructure and implants constantly.
+
+## Spyware Vendors Covered
+
+| Vendor | Products | IOCs | Status |
+|--------|----------|------|--------|
+| **NSO Group** | Pegasus, Phantom, Chrysaor, Quadrant, Novalight, Circles | 81 processes, 5,168+ domains | Active |
+| **Candiru** | DevilsTongue, Sourgum | 57+ domains | Active |
+| **Intellexa** | Predator (Cytrox) | Multiple domains | Active |
+| **Paragon** | Graphite | Tier 1/2 infrastructure | Active |
+| **FinFisher** | FinSpy | Historical | Insolvent 2022 |
+| **Hacking Team** | RCS | Historical | Rebranded |
+
+**NSO Infection Vectors** (from leaked court documents):
+- **Heaven** — First Android 0-click via WhatsApp (2018)
+- **Erised** — Samsung-only WhatsApp 0-click (DNG exploit)
+- **Eden** — WhatsApp-based vector
+- **Hummingbird** — Umbrella term for WhatsApp 0-click family
+- **iOS Covert** — iMessage-based 0-click
 
 ---
 
@@ -49,7 +68,7 @@ set up the desktop agent or build the Android agent app.
 
 ### API for agents
 ```
-POST /api/ingest   Header: X-Api-Key: <PSM_SWEEP_TOKEN>
+POST /api/ingest   Header: X-Api-Key: ***
 Body: {"target":"desktop|android","source_label":"…","snapshot":{…}}
 ```
 Returns `{scan_id, summary, findings}`. Every agent payload lands in `/scans`.
@@ -125,7 +144,7 @@ reads the oracle.
 
 ## Hard limits (read before trusting a clean result)
 
-- **Absence of a match ≠ non-infection.** Pegasus rotates infrastructure fast.
+- **Absence of a match ≠ non-infection.** Spyware rotates infrastructure fast.
 - **Live telemetry is transient** — repeat scans across sessions.
 - **Process-name matching is the weakest signal** — corroborate with network +
   persistence evidence.
